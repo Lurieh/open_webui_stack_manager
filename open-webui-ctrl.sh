@@ -50,12 +50,16 @@ wait_healthy() {
 start_searxng() {
   echo "🔍 Démarrage de SearXNG..."
 
-  # Generate config every start — idempotent, survives reboot
-  cat > "$SEARXNG_CONFIG" << 'EOF'
+  if sudo docker ps -a --format '{{.Names}}' | grep -q "^${SEARXNG_NAME}$"; then
+    sudo docker start "$SEARXNG_NAME"
+  else
+    # Nouvelle clé à chaque création de conteneur (jamais stockée ni en clair dans le script)
+    local secret=$(openssl rand -hex 32)
+    cat > "$SEARXNG_CONFIG" << EOF
 use_default_settings: true
 
 server:
-  secret_key: "KEBjgY909G1Ui3BHoib3kuGk3EPEnL"
+  secret_key: "${secret}"
   image_proxy: true
   limiter: false
   public_instance: false
@@ -65,10 +69,6 @@ search:
     - html
     - json
 EOF
-
-  if sudo docker ps -a --format '{{.Names}}' | grep -q "^${SEARXNG_NAME}$"; then
-    sudo docker start "$SEARXNG_NAME"
-  else
     sudo docker run -d \
       --name "$SEARXNG_NAME" \
       -p "${SEARXNG_PORT}:8080" \

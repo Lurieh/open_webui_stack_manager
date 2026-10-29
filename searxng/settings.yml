@@ -1,5 +1,0 @@
-use_post: true
-server:
-  port: 8080
-  base_url: 'http://localhost:8081/'
-botdetection: false
